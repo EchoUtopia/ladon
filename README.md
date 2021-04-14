@@ -1,35 +1,4 @@
-<h1 align="center"><img src="./docs/images/banner_ladon.png" alt="ORY Ladon - Policy-based Access Control"></h1>
-
-[![Join the chat at https://www.ory.sh/chat](https://img.shields.io/badge/join-chat-00cc99.svg)](https://www.ory.sh/chat)
-[![Join newsletter](https://img.shields.io/badge/join-newsletter-00cc99.svg)](http://eepurl.com/bKT3N9)
-
-[![Build Status](https://travis-ci.org/ory/ladon.svg?branch=master)](https://travis-ci.org/ory/ladon)
-[![Coverage Status](https://coveralls.io/repos/ory/ladon/badge.svg?branch=master&service=github)](https://coveralls.io/github/ory/ladon?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ory/ladon)](https://goreportcard.com/report/github.com/ory/ladon)
-[![GoDoc](https://godoc.org/github.com/ory/ladon?status.png)](https://godoc.org/github.com/ory/ladon)
-
-[Ladon](https://en.wikipedia.org/wiki/Ladon_%28mythology%29) is the serpent dragon protecting your resources.
-
-Ladon is a library written in [Go](https://golang.org) for access control policies, similar to [Role Based Access Control](https://en.wikipedia.org/wiki/Role-based_access_control)
-or [Access Control Lists](https://en.wikipedia.org/wiki/Access_control_list).
-In contrast to [ACL](https://en.wikipedia.org/wiki/Access_control_list) and [RBAC](https://en.wikipedia.org/wiki/Role-based_access_control)
-you get fine-grained access control with the ability to answer questions in complex environments such as multi-tenant or distributed applications
-and large organizations. Ladon is inspired by [AWS IAM Policies](http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html).
-
-Ladon officially ships with an exemplary in-memory storage implementations.
-Community-supported adapters are available for [CockroachDB](https://github.com/wehco/ladon-crdb).
-
-Ladon is now considered stable.
-
----
-
-ORY builds solutions for better internet security and accessibility. We have a couple more projects you might enjoy:
-
-* **[Hydra](https://github.com/ory/hydra)**, a security-first open source OAuth2 and OpenID Connect server for new and existing infrastructures that uses Ladon for access control.
-* **[ORY Editor](https://github.com/ory/editor)**, an extensible, modern WYSI editor for the web written in React.
-* **[Fosite](https://github.com/ory/fosite)**, an extensible security first OAuth 2.0 and OpenID Connect SDK for Go.
-* **[Dockertest](https://github.com/ory/dockertest)**: Write better integration tests with dockertest!
-
+it's in WIP status
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
