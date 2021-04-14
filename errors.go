@@ -43,12 +43,6 @@ var (
 		reason: "The request was denied because a policy denied request.",
 	}
 
-	// ErrNotFound is returned when a resource can not be found.
-	ErrNotFound = &errorWithContext{
-		error:  errors.New("Resource could not be found"),
-		code:   http.StatusNotFound,
-		status: http.StatusText(http.StatusNotFound),
-	}
 )
 
 func NewErrResourceNotFound(err error) error {

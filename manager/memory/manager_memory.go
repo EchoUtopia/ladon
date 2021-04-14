@@ -124,17 +124,3 @@ func (m *MemoryManager) findAllPolicies() (Policies, error) {
 func (m *MemoryManager) FindRequestCandidates(r *Request) (Policies, error) {
 	return m.findAllPolicies()
 }
-
-// FindPoliciesForSubject returns policies that could match the subject. It either returns
-// a set of policies that applies to the subject, or a superset of it.
-// If an error occurs, it returns nil and the error.
-func (m *MemoryManager) FindPoliciesForSubject(subject string) (Policies, error) {
-	return m.findAllPolicies()
-}
-
-// FindPoliciesForResource returns policies that could match the resource. It either returns
-// a set of policies that apply to the resource, or a superset of it.
-// If an error occurs, it returns nil and the error.
-func (m *MemoryManager) FindPoliciesForResource(resource string) (Policies, error) {
-	return m.findAllPolicies()
-}

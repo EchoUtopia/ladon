@@ -29,6 +29,7 @@ import (
 // Policies is an array of policies.
 type Policies []Policy
 
+
 // Policy represent a policy model.
 type Policy interface {
 	// GetID returns the policies id.
@@ -38,7 +39,7 @@ type Policy interface {
 	GetDescription() string
 
 	// GetSubjects returns the policies subjects.
-	GetSubjects() []string
+	GetSubjects() []Subject
 
 	// AllowAccess returns true if the policy effect is allow, otherwise false.
 	AllowAccess() bool
@@ -69,7 +70,7 @@ type Policy interface {
 type DefaultPolicy struct {
 	ID          string     `json:"id" gorethink:"id"`
 	Description string     `json:"description" gorethink:"description"`
-	Subjects    []string   `json:"subjects" gorethink:"subjects"`
+	Subjects    []Subject   `json:"subjects" gorethink:"subjects"`
 	Effect      string     `json:"effect" gorethink:"effect"`
 	Resources   []string   `json:"resources" gorethink:"resources"`
 	Actions     []string   `json:"actions" gorethink:"actions"`
@@ -82,7 +83,7 @@ func (p *DefaultPolicy) UnmarshalJSON(data []byte) error {
 	var pol = struct {
 		ID          string     `json:"id" gorethink:"id"`
 		Description string     `json:"description" gorethink:"description"`
-		Subjects    []string   `json:"subjects" gorethink:"subjects"`
+		Subjects    []*TenantSubject   `json:"subjects" gorethink:"subjects"`
 		Effect      string     `json:"effect" gorethink:"effect"`
 		Resources   []string   `json:"resources" gorethink:"resources"`
 		Actions     []string   `json:"actions" gorethink:"actions"`
@@ -95,17 +96,22 @@ func (p *DefaultPolicy) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &pol); err != nil {
 		return errors.WithStack(err)
 	}
+	subjects := make([]Subject, len(pol.Subjects))
+	for k, v := range pol.Subjects{
+		subjects[k] = v
+	}
 
 	*p = *&DefaultPolicy{
 		ID:          pol.ID,
 		Description: pol.Description,
-		Subjects:    pol.Subjects,
+		Subjects:    subjects,
 		Effect:      pol.Effect,
 		Resources:   pol.Resources,
 		Actions:     pol.Actions,
 		Conditions:  pol.Conditions,
 		Meta:        pol.Meta,
 	}
+
 	return nil
 }
 
@@ -129,7 +135,7 @@ func (p *DefaultPolicy) GetDescription() string {
 }
 
 // GetSubjects returns the policies subjects.
-func (p *DefaultPolicy) GetSubjects() []string {
+func (p *DefaultPolicy) GetSubjects() []Subject {
 	return p.Subjects
 }
 

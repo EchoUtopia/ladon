@@ -21,6 +21,7 @@
 package ladon_test
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
@@ -59,7 +60,7 @@ func benchmarkLadon(i int, b *testing.B, warden *ladon.Ladon) {
 	b.ResetTimer()
 	var err error
 	for n := 0; n < b.N; n++ {
-		if err = warden.IsAllowed(&ladon.Request{
+		if err = warden.IsAllowed(context.TODO(), &ladon.Request{
 			Subject:  "5",
 			Action:   "bar",
 			Resource: "baz",
@@ -102,7 +103,7 @@ func generatePolicies(n int) map[string]ladon.Policy {
 		id := uuid.New()
 		policies[id] = &ladon.DefaultPolicy{
 			ID:        id,
-			Subjects:  []string{"foobar", "some-resource" + fmt.Sprintf("%d", i%100), strconv.Itoa(i)},
+			Subjects:  []ladon.Subject{ladon.PlainSubject("foobar"), ladon.PlainSubject("some-resource" + fmt.Sprintf("%d", i%100)), ladon.PlainSubject(strconv.Itoa(i))},
 			Actions:   []string{"foobar", "foobar", "foobar", "foobar", "foobar"},
 			Resources: []string{"foobar", id},
 			Effect:    ladon.AllowAccess,

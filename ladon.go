@@ -21,6 +21,7 @@
 package ladon
 
 import (
+	"context"
 	"github.com/pkg/errors"
 )
 
@@ -54,7 +55,7 @@ func (l *Ladon) metric() Metric {
 }
 
 // IsAllowed returns nil if subject s has permission p on resource r with context c or an error otherwise.
-func (l *Ladon) IsAllowed(r *Request) (err error) {
+func (l *Ladon) IsAllowed(ctx context.Context, r *Request) (err error) {
 	policies, err := l.Manager.FindRequestCandidates(r)
 	if err != nil {
 		go l.metric().RequestProcessingError(*r, nil, err)
@@ -64,17 +65,26 @@ func (l *Ladon) IsAllowed(r *Request) (err error) {
 	// Although the manager is responsible of matching the policies, it might decide to just scan for
 	// subjects, it might return all policies, or it might have a different pattern matching than Golang.
 	// Thus, we need to make sure that we actually matched the right policies.
-	return l.DoPoliciesAllow(r, policies)
+	return l.DoPoliciesAllow(ctx, r, policies)
 }
 
 // DoPoliciesAllow returns nil if subject s has permission p on resource r with context c for a given policy list or an error otherwise.
 // The IsAllowed interface should be preferred since it uses the manager directly. This is a lower level interface for when you don't want to use the ladon manager.
-func (l *Ladon) DoPoliciesAllow(r *Request, policies []Policy) (err error) {
+func (l *Ladon) DoPoliciesAllow(ctx context.Context, r *Request, policies []Policy) (err error) {
 	var allowed = false
 	var deciders = Policies{}
 
 	// Iterate through all policies
 	for _, p := range policies {
+
+		// Does the resource match with one of the policies?
+		if rm, err := l.matcher().Matches(p, p.GetResources(), r.Resource); err != nil {
+			go l.metric().RequestProcessingError(*r, p, err)
+			return errors.WithStack(err)
+		} else if !rm {
+			// no, continue to next policy
+			continue
+		}
 
 		// Does the action match with one of the policies?
 		// This is the first check because usually actions are a superset of get|update|delete|set
@@ -90,7 +100,11 @@ func (l *Ladon) DoPoliciesAllow(r *Request, policies []Policy) (err error) {
 		// Does the subject match with one of the policies?
 		// There are usually less subjects than resources which is why this is checked
 		// before checking for resources.
-		if sm, err := l.matcher().Matches(p, p.GetSubjects(), r.Subject); err != nil {
+		subjects := make([]string, 0, len(p.GetSubjects()))
+		for _, v := range p.GetSubjects(){
+			subjects = append(subjects, v.GetID())
+		}
+		if sm, err := l.matcher().Matches(p, subjects, r.Subject); err != nil {
 			go l.metric().RequestProcessingError(*r, p, err)
 			return err
 		} else if !sm {
@@ -98,18 +112,10 @@ func (l *Ladon) DoPoliciesAllow(r *Request, policies []Policy) (err error) {
 			continue
 		}
 
-		// Does the resource match with one of the policies?
-		if rm, err := l.matcher().Matches(p, p.GetResources(), r.Resource); err != nil {
-			go l.metric().RequestProcessingError(*r, p, err)
-			return errors.WithStack(err)
-		} else if !rm {
-			// no, continue to next policy
-			continue
-		}
 
 		// Are the policies conditions met?
 		// This is checked first because it usually has a small complexity.
-		if !l.passesConditions(p, r) {
+		if !l.passesConditions(ctx, p, r) {
 			// no, continue to next policy
 			continue
 		}
@@ -139,9 +145,9 @@ func (l *Ladon) DoPoliciesAllow(r *Request, policies []Policy) (err error) {
 	return nil
 }
 
-func (l *Ladon) passesConditions(p Policy, r *Request) bool {
+func (l *Ladon) passesConditions(ctx context.Context, p Policy, r *Request) bool {
 	for key, condition := range p.GetConditions() {
-		if pass := condition.Fulfills(r.Context[key], r); !pass {
+		if pass := condition.Fulfills(ctx, r.Context[key], r); !pass {
 			return false
 		}
 	}
