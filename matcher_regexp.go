@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	"github.com/dlclark/regexp2"
-	"github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/pkg/errors"
 
 	"github.com/ory/ladon/compiler"
@@ -64,47 +64,52 @@ func (m *RegexpMatcher) set(pattern string, reg *regexp2.Regexp) {
 
 // Matches a needle with an array of regular expressions and returns true if a match was found.
 func (m *RegexpMatcher) Matches(p Policy, haystack []string, needle string) (bool, error) {
+
+	for _, h := range haystack {
+		matched, err := m.Match(p, h, needle)
+		if err != nil {
+			return false, err
+		}
+		if matched {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (m *RegexpMatcher) Match(p Policy, pattern, needle string) (bool, error) {
 	var reg *regexp2.Regexp
 	var err error
-	for _, h := range haystack {
 
-		// This means that the current haystack item does not contain a regular expression
-		if strings.Count(h, string(p.GetStartDelimiter())) == 0 {
-			// If we have a simple string match, we've got a match!
-			if h == needle {
-				return true, nil
-			}
+	// This means that the current haystack item does not contain a regular expression
+	if strings.Count(pattern, string(p.GetStartDelimiter())) == 0 {
+		// If we have a simple string match, we've got a match!
+		return pattern == needle, nil
+	}
 
-			// Not string match, but also no regexp, continue with next haystack item
-			continue
-		}
-
-		if reg = m.get(h); reg != nil {
-			if matched, err := reg.MatchString(needle); err != nil {
-				// according to regexp2 documentation: https://github.com/dlclark/regexp2#usage
-				// The only error that the *Match* methods should return is a Timeout if you set the
-				// re.MatchTimeout field. Any other error is a bug in the regexp2 package.
-				return false, errors.WithStack(err)
-			} else if matched {
-				return true, nil
-			}
-			continue
-		}
-
-		reg, err = compiler.CompileRegex(h, p.GetStartDelimiter(), p.GetEndDelimiter())
-		if err != nil {
-			return false, errors.WithStack(err)
-		}
-
-		m.set(h, reg)
+	if reg = m.get(pattern); reg != nil {
 		if matched, err := reg.MatchString(needle); err != nil {
 			// according to regexp2 documentation: https://github.com/dlclark/regexp2#usage
 			// The only error that the *Match* methods should return is a Timeout if you set the
 			// re.MatchTimeout field. Any other error is a bug in the regexp2 package.
 			return false, errors.WithStack(err)
-		} else if matched {
-			return true, nil
+		} else {
+			return matched, nil
 		}
 	}
-	return false, nil
+
+	reg, err = compiler.CompileRegex(pattern, p.GetStartDelimiter(), p.GetEndDelimiter())
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	m.set(pattern, reg)
+	if matched, err := reg.MatchString(needle); err != nil {
+		// according to regexp2 documentation: https://github.com/dlclark/regexp2#usage
+		// The only error that the *Match* methods should return is a Timeout if you set the
+		// re.MatchTimeout field. Any other error is a bug in the regexp2 package.
+		return false, errors.WithStack(err)
+	} else {
+		return matched, nil
+	}
 }

@@ -42,7 +42,6 @@ var (
 		status: http.StatusText(http.StatusForbidden),
 		reason: "The request was denied because a policy denied request.",
 	}
-
 )
 
 func NewErrResourceNotFound(err error) error {

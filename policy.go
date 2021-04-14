@@ -29,7 +29,6 @@ import (
 // Policies is an array of policies.
 type Policies []Policy
 
-
 // Policy represent a policy model.
 type Policy interface {
 	// GetID returns the policies id.
@@ -39,7 +38,7 @@ type Policy interface {
 	GetDescription() string
 
 	// GetSubjects returns the policies subjects.
-	GetSubjects() []Subject
+	GetSubjects(tenant string) []Subject
 
 	// AllowAccess returns true if the policy effect is allow, otherwise false.
 	AllowAccess() bool
@@ -68,27 +67,27 @@ type Policy interface {
 
 // DefaultPolicy is the default implementation of the policy interface.
 type DefaultPolicy struct {
-	ID          string     `json:"id" gorethink:"id"`
-	Description string     `json:"description" gorethink:"description"`
-	Subjects    []Subject   `json:"subjects" gorethink:"subjects"`
-	Effect      string     `json:"effect" gorethink:"effect"`
-	Resources   []string   `json:"resources" gorethink:"resources"`
-	Actions     []string   `json:"actions" gorethink:"actions"`
-	Conditions  Conditions `json:"conditions" gorethink:"conditions"`
-	Meta        []byte     `json:"meta" gorethink:"meta"`
+	ID          string               `json:"id" `
+	Description string               `json:"description" `
+	Subjects    map[string][]Subject `json:"subjects" `
+	Effect      string               `json:"effect" `
+	Resources   []string             `json:"resources" `
+	Actions     []string             `json:"actions" `
+	Conditions  Conditions           `json:"conditions" `
+	Meta        []byte               `json:"meta" `
 }
 
 // UnmarshalJSON overwrite own policy with values of the given in policy in JSON format
 func (p *DefaultPolicy) UnmarshalJSON(data []byte) error {
 	var pol = struct {
-		ID          string     `json:"id" gorethink:"id"`
-		Description string     `json:"description" gorethink:"description"`
-		Subjects    []*TenantSubject   `json:"subjects" gorethink:"subjects"`
-		Effect      string     `json:"effect" gorethink:"effect"`
-		Resources   []string   `json:"resources" gorethink:"resources"`
-		Actions     []string   `json:"actions" gorethink:"actions"`
-		Conditions  Conditions `json:"conditions" gorethink:"conditions"`
-		Meta        []byte     `json:"meta" gorethink:"meta"`
+		ID          string           `json:"id" `
+		Description string           `json:"description" `
+		Subjects    []*TenantSubject `json:"subjects" `
+		Effect      string           `json:"effect" `
+		Resources   []string         `json:"resources" `
+		Actions     []string         `json:"actions" `
+		Conditions  Conditions       `json:"conditions" `
+		Meta        []byte           `json:"meta" `
 	}{
 		Conditions: Conditions{},
 	}
@@ -96,9 +95,9 @@ func (p *DefaultPolicy) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &pol); err != nil {
 		return errors.WithStack(err)
 	}
-	subjects := make([]Subject, len(pol.Subjects))
-	for k, v := range pol.Subjects{
-		subjects[k] = v
+	subjects := make(map[string][]Subject)
+	for _, v := range pol.Subjects {
+		subjects[v.Tenant] = append(subjects[v.Tenant], v)
 	}
 
 	*p = *&DefaultPolicy{
@@ -135,8 +134,8 @@ func (p *DefaultPolicy) GetDescription() string {
 }
 
 // GetSubjects returns the policies subjects.
-func (p *DefaultPolicy) GetSubjects() []Subject {
-	return p.Subjects
+func (p *DefaultPolicy) GetSubjects(tenent string) []Subject {
+	return p.Subjects[tenent]
 }
 
 // AllowAccess returns true if the policy effect is allow, otherwise false.

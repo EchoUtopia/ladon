@@ -35,6 +35,8 @@ type Request struct {
 
 	// Context is the request's environmental context.
 	Context Context `json:"context"`
+
+	Tenant string `json:"tenant"`
 }
 
 // Warden is responsible for deciding if subject s can perform action a on resource r with context c.

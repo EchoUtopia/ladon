@@ -22,6 +22,7 @@ package ladon
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 )
 
@@ -100,18 +101,13 @@ func (l *Ladon) DoPoliciesAllow(ctx context.Context, r *Request, policies []Poli
 		// Does the subject match with one of the policies?
 		// There are usually less subjects than resources which is why this is checked
 		// before checking for resources.
-		subjects := make([]string, 0, len(p.GetSubjects()))
-		for _, v := range p.GetSubjects(){
-			subjects = append(subjects, v.GetID())
-		}
-		if sm, err := l.matcher().Matches(p, subjects, r.Subject); err != nil {
-			go l.metric().RequestProcessingError(*r, p, err)
+		subjectMatched, err := l.subjectsMatch(ctx, p, r)
+		if err != nil {
 			return err
-		} else if !sm {
-			// no, continue to next policy
+		}
+		if !subjectMatched {
 			continue
 		}
-
 
 		// Are the policies conditions met?
 		// This is checked first because it usually has a small complexity.
@@ -152,4 +148,22 @@ func (l *Ladon) passesConditions(ctx context.Context, p Policy, r *Request) bool
 		}
 	}
 	return true
+}
+
+func (l *Ladon) subjectsMatch(ctx context.Context, p Policy, r *Request) (bool, error) {
+	for _, v := range p.GetSubjects(r.Tenant) {
+		matched, err := l.matcher().Match(p, v.GetID(), r.Subject)
+		if err != nil {
+			return false, err
+		}
+		if matched {
+			for key, condition := range v.GetConditions() {
+				if pass := condition.Fulfills(ctx, r.Context[key], r); !pass {
+					return false, nil
+				}
+			}
+			return true, nil
+		}
+	}
+	return false, nil
 }

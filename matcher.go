@@ -22,6 +22,7 @@ package ladon
 
 type matcher interface {
 	Matches(p Policy, haystack []string, needle string) (matches bool, error error)
+	Match(p Policy, obj1, object2 string) (bool, error)
 }
 
 var DefaultMatcher = NewRegexpMatcher(512)
